@@ -1,0 +1,3 @@
+-- Run after creating demo auth users. The UI demo mode remains available without credentials.
+insert into public.skills(name,category,canonical_slug) values
+('Doppler Radar','Forecasting','doppler-radar'),('Remote Sensing','Observation','remote-sensing'),('NWP','Modelling','nwp'),('Climate Modelling','Climate','climate-modelling'),('GIS','Data','gis'),('Python','Data','python'),('Satellite Interpretation','Observation','satellite-interpretation'),('Atmospheric Dynamics','Science','atmospheric-dynamics'),('Cyclone Forecasting','Forecasting','cyclone-forecasting'),('Disaster Early Warning','Services','disaster-early-warning') on conflict do nothing;
