@@ -7,6 +7,7 @@ export function InteractiveHero({ children }: PropsWithChildren) {
     const element = host.current;
     if (!element) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    const mobile = matchMedia("(max-width: 760px), (pointer: coarse)");
     let effect: VantaEffect | undefined;
     let generation = 0;
     let disposed = false;
@@ -32,6 +33,7 @@ export function InteractiveHero({ children }: PropsWithChildren) {
         disposed ||
         failed ||
         preference.matches ||
+        mobile.matches ||
         document.hidden ||
         !visible
       )
@@ -85,6 +87,7 @@ export function InteractiveHero({ children }: PropsWithChildren) {
     observer.observe(element);
     const resize = new ResizeObserver(() => effect?.resize());
     resize.observe(element);
+    mobile.addEventListener("change", sync);
     preference.addEventListener("change", sync);
     document.addEventListener("visibilitychange", sync);
     element.addEventListener("webglcontextlost", lost, true);
@@ -94,6 +97,7 @@ export function InteractiveHero({ children }: PropsWithChildren) {
       generation++;
       observer.disconnect();
       resize.disconnect();
+      mobile.removeEventListener("change", sync);
       preference.removeEventListener("change", sync);
       document.removeEventListener("visibilitychange", sync);
       element.removeEventListener("webglcontextlost", lost, true);

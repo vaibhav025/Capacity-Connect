@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { motion } from "framer-motion";
 import {
   ArrowUpRight,
   BookOpen,
@@ -7,7 +8,9 @@ import {
   Clock3,
   Users,
 } from "lucide-react";
+import { learningContent } from "../../data/learning";
 import { useState } from "react";
+import { updateDemo, useDemo } from "../../lib/demoStore";
 import { Link } from "react-router-dom";
 import type { Course, Role } from "../../types/domain";
 import { AnimatedButtons, spring } from "../ui/AnimatedButtons";
@@ -22,16 +25,14 @@ export function CourseCatalogCard({
   role?: Role;
 }) {
   const reduce = useReducedMotion();
-  const [saved, setSaved] = useState(false);
+  const { bookmarks } = useDemo();
+  const saved = bookmarks.includes(course.id);
+  const [status, setStatus] = useState("");
   const href = `/${role}/courses/${course.id}`;
   return (
     <motion.article
       className="course-card group relative h-full"
-      whileHover={
-        reduce
-          ? undefined
-          : { y: -6, scale: 1.02, boxShadow: "0 22px 50px -18px #12344a40" }
-      }
+      whileHover={reduce ? undefined : { y: -3 }}
       transition={spring}
     >
       <div className="course-banner" style={{ backgroundColor: course.accent }}>
@@ -44,7 +45,23 @@ export function CourseCatalogCard({
               className="bookmark-button"
               aria-label={saved ? "Remove bookmark" : "Bookmark course"}
               aria-pressed={saved}
-              onClick={() => setSaved(!saved)}
+              onClick={() => {
+                try {
+                  updateDemo((previous) => ({
+                    ...previous,
+                    bookmarks: saved
+                      ? previous.bookmarks.filter((id) => id !== course.id)
+                      : [...previous.bookmarks, course.id],
+                  }));
+                  setStatus(
+                    saved
+                      ? "Bookmark removed."
+                      : "Course bookmarked in this browser.",
+                  );
+                } catch {
+                  setStatus("Unable to save bookmark. Check browser storage.");
+                }
+              }}
             >
               {saved ? <Check size={17} /> : <Bookmark size={17} />}
             </AnimatedButtons>
@@ -67,8 +84,8 @@ export function CourseCatalogCard({
           <Link to={href}>{course.title}</Link>
         </h3>
         <p>
-          Build practical capability through guided modules, field notes and an
-          applied assessment.
+          {learningContent[course.id]?.outcome ||
+            "Build practical capability through guided learning."}
         </p>
         <div className="course-meta">
           <span>
@@ -110,7 +127,7 @@ export function CourseCatalogCard({
           </Link>
         </motion.div>
         <span role="status" className="sr-only">
-          {saved ? "Bookmarked for this session" : ""}
+          {status}
         </span>
       </div>
     </motion.article>

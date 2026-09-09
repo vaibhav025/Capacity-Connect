@@ -1,4 +1,5 @@
-import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { motion, type HTMLMotionProps } from "framer-motion";
 export const spring = {
   type: "spring" as const,
   stiffness: 360,

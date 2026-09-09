@@ -76,16 +76,50 @@ export function Competency() {
           </AnimatedButtons>
         </section>
         <section className="panel mapping-empty">
-          <BrainCircuit size={64} strokeWidth={1} />
-          <p className="eyebrow">EXPERTISE, CONNECTED</p>
+          <p className="eyebrow">CAPABILITY → OPERATIONAL READINESS</p>
           <h2>
-            The right people.
-            <br />A stronger forecast.
+            Make expertise
+            <br />
+            actionable.
           </h2>
-          <p>
-            Choose a subject to compare approved trainers by competencies,
-            experience and learner outcomes.
-          </p>
+          <div className="capability-flow">
+            <div>
+              <b>01</b>
+              <section>
+                <strong>Current capability</strong>
+                <p>
+                  Approved trainer profiles, experience and learning evidence.
+                </p>
+              </section>
+            </div>
+            <div>
+              <b>02</b>
+              <section>
+                <strong>Required skills</strong>
+                <p>{topic.skills.join(" · ")}</p>
+              </section>
+            </div>
+            <div>
+              <b>03</b>
+              <section>
+                <strong>Recommended training expertise</strong>
+                <p>
+                  Compare matches across six weighted signals. Inspect evidence
+                  gaps before assigning a trainer.
+                </p>
+              </section>
+            </div>
+            <div>
+              <b>04</b>
+              <section>
+                <strong>Target capability</strong>
+                <p>
+                  {topic.name}: supported by guided learning and demonstrated
+                  understanding.
+                </p>
+              </section>
+            </div>
+          </div>
         </section>
       </div>
       <CompetencyMatchModal

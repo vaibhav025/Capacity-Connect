@@ -1,0 +1,70 @@
+/* Capacity Connect: semantic foundation and workspace experiences. */
+:root {
+  --bg: #f7fafc;
+  --surface: #fff;
+  --surface-elevated: #fff;
+  --surface-tint: #edf5ff;
+  --text-primary: #172b43;
+  --text-secondary: #52657c;
+  --text-muted: #60738a;
+  --brand-primary: #0969da;
+  --brand-secondary: #38bdf8;
+  --navy: #071426;
+  --dark-surface: #0b172a;
+  --border: #dce5ef;
+  --success: #197351;
+  --warning: #93601a;
+  --critical: #b42338;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 2px 4px #07142604;
+  --shadow-md: 0 8px 24px -16px #07142630;
+  --shadow-lg: 0 20px 50px -20px #07142645;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+body {
+  background: var(--bg);
+}
+a {
+  text-decoration: none;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 4px;
+}
+:where(input, select, textarea) {
+  accent-color: var(--brand-primary);
+}
+::selection {
+  background: #b8ddff;
+  color: var(--navy);
+}
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 20px;
+  z-index: 100;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--brand-primary);
+  border-radius: 6px;
+}
+.skip-link:focus {
+  top: 12px;
+}

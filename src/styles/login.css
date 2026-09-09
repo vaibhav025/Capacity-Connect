@@ -1,0 +1,51 @@
+/* Existing demo authentication remains unchanged. */
+.login-page {
+  background: var(--bg);
+}
+.login-art {
+  background: var(--navy);
+}
+.hero-shade {
+  background: linear-gradient(100deg, #071426f5, #07142665);
+}
+.login-message h1 {
+  letter-spacing: -0.055em;
+}
+.login-message h1 em {
+  color: #7dd3fc;
+}
+.login-message .eyebrow {
+  color: #9fc4e2;
+}
+.login-form {
+  padding: 48px 11%;
+}
+.login-form label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.login-form input {
+  min-height: 50px;
+  background: var(--surface);
+  border-color: var(--border);
+}
+.form-copy p,
+.login-foot {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.demo-roles > div {
+  display: flex;
+  gap: 8px;
+}
+.demo-roles button {
+  flex: 1;
+  margin: 0;
+  min-height: 42px;
+  font-size: 12px;
+}
+.demo-roles button.selected {
+  background: var(--surface-tint);
+  border-color: #9fbfe4;
+  color: var(--brand-primary);
+}

@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { motion } from "framer-motion";
 export function AnimatedProgressRing({
   progress,
   size = 56,

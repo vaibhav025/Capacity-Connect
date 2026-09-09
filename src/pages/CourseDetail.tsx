@@ -1,4 +1,6 @@
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "../lib/motion";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageTitle } from "../components/ui/PageTitle";
@@ -15,6 +17,8 @@ import type { Role } from "../types/domain";
 export function CourseDetail({ role = "trainee" }: { role?: Role }) {
   const { id = "radar" } = useParams();
   const state = useDemo();
+  const reduce = useReducedMotion();
+  const [outlineOpen, setOutlineOpen] = useState(true);
   const [selected, setSelected] = useState(0);
   const [status, setStatus] = useState("");
   const course = courses.find((item) => item.id === id);
@@ -56,6 +60,18 @@ export function CourseDetail({ role = "trainee" }: { role?: Role }) {
           )
         }
       />
+      <section className="learning-summary" aria-label="Learning outcome">
+        <Target size={34} />
+        <div>
+          <h2>YOUR OPERATIONAL OUTCOME</h2>
+          <p>{content.outcome}</p>
+          <div className="skill-summary">
+            <span>{course.tag}</span>
+            <span>{course.level}</span>
+            <span>3 field notes · 1 knowledge check</span>
+          </div>
+        </div>
+      </section>
       <div className="learning-layout">
         <section className="panel learning-outline">
           <div className="panel-head">
@@ -65,23 +81,45 @@ export function CourseDetail({ role = "trainee" }: { role?: Role }) {
             </div>
             <AnimatedProgressRing progress={progressOf(learning)} />
           </div>
-          {content.modules.map((item, index) => (
-            <button
-              key={item.title}
-              className={`lesson-step ${selected === index ? "selected" : ""}`}
-              aria-pressed={selected === index}
-              onClick={() => setSelected(index)}
-            >
-              <span>
-                {learning.completed.includes(index) ? (
-                  <CheckCircle2 size={20} />
-                ) : (
-                  "0" + (index + 1)
-                )}
-              </span>
-              <strong>{item.title}</strong>
-            </button>
-          ))}
+          <button
+            className="outline-toggle"
+            aria-expanded={outlineOpen}
+            aria-controls="course-module-list"
+            onClick={() => setOutlineOpen(!outlineOpen)}
+          >
+            {outlineOpen ? "Hide modules" : "Show modules"}
+            <span aria-hidden="true">{outlineOpen ? "-" : "+"}</span>
+          </button>
+          <AnimatePresence initial={false}>
+            {outlineOpen && (
+              <motion.div
+                id="course-module-list"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: reduce ? 0 : 0.2 }}
+                style={{ overflow: "hidden" }}
+              >
+                {content.modules.map((item, index) => (
+                  <button
+                    key={item.title}
+                    className={`lesson-step ${selected === index ? "selected" : ""} ${learning.completed.includes(index) ? "completed" : ""}`}
+                    aria-pressed={selected === index}
+                    onClick={() => setSelected(index)}
+                  >
+                    <span>
+                      {learning.completed.includes(index) ? (
+                        <CheckCircle2 size={20} />
+                      ) : (
+                        "0" + (index + 1)
+                      )}
+                    </span>
+                    <strong>{item.title}</strong>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
           {role === "trainee" && (
             <Link
               className="secondary wide mt-5"

@@ -1,4 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { type PropsWithChildren } from "react";
 export function AnimatedPageTransition({
   children,

@@ -1,0 +1,199 @@
+/* Core surfaces have an opaque, readable foundation. */
+.page-title {
+  margin-bottom: 26px;
+}
+.page-title h1 {
+  font-size: 29px;
+  line-height: 1.2;
+  font-weight: 650;
+}
+.page-title p:not(.eyebrow) {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.eyebrow {
+  color: var(--brand-primary);
+  font-size: 10px;
+}
+.primary,
+.secondary,
+.filter,
+.approve,
+.reject {
+  font-size: 12px;
+  min-height: 42px;
+  border-radius: 6px;
+  transition:
+    background 0.18s,
+    transform 0.18s,
+    border-color 0.18s;
+}
+.primary {
+  background: var(--brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+.primary:hover {
+  background: #0758b8;
+}
+.secondary {
+  background: var(--surface-tint);
+  color: #1459a2;
+  border: 1px solid #d5e5f9;
+}
+.secondary:hover {
+  background: #e0eeff;
+}
+.filter {
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.filter.active {
+  background: var(--surface-tint);
+  border-color: #9abfea;
+  color: #1258a9;
+}
+.panel,
+.stat-card,
+.course-card {
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.panel {
+  padding: 25px;
+}
+.panel h3 {
+  font-size: 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.panel-head p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.text-link {
+  font-size: 12px;
+}
+.stat-card {
+  position: relative;
+  padding: 22px 18px 35px;
+  gap: 14px;
+}
+.stat-card > div:last-of-type {
+  min-width: 0;
+}
+.stat-card span,
+.stat-card small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.stat-card strong {
+  font-size: 32px;
+  font-weight: 650;
+  margin: 8px 0;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-card .counter-value {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+.stat-card small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.stat-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-tint);
+  color: var(--brand-primary);
+}
+.stat-icon.purple {
+  color: #3c62a2;
+  background: #edf1fa;
+}
+.stat-icon.green {
+  color: var(--success);
+  background: #eaf6ef;
+}
+.stat-icon.amber {
+  color: var(--warning);
+  background: #fff5e7;
+}
+.stat-quick {
+  opacity: 1;
+  transform: none;
+  font-size: 10px;
+}
+.dashboard-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+.dashboard-grid > *,
+.stat-grid > *,
+.course-grid > * {
+  min-width: 0;
+}
+.attention-item {
+  padding: 18px 0;
+}
+.attention-item strong,
+.course-row-main strong {
+  font-size: 13px;
+}
+.attention-item small,
+.course-row-main small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.course-row-main {
+  min-width: 0;
+}
+.course-row {
+  transition: background 0.2s;
+}
+.course-row:hover {
+  background: var(--bg);
+}
+.course-thumb,
+.round {
+  flex-shrink: 0;
+}
+.percent {
+  flex-shrink: 0;
+}
+.progress i {
+  background: var(--brand-primary);
+  transition: width 0.5s;
+}
+.progress-ring {
+  color: var(--brand-primary);
+}
+.pill {
+  font-size: 10px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+.assessment-card p,
+.mini-notice small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.chart-controls button {
+  border-radius: 5px;
+  min-height: 36px;
+  font-size: 11px;
+}
+.recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}
+.recharts-default-tooltip {
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+}

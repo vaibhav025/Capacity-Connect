@@ -6,14 +6,15 @@ import App from "./App";
 import { LenisSmoothScroll } from "./components/layout/LenisSmoothScroll";
 import "./styles.css";
 import "./mission.css";
+import "./experience.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <MotionConfig reducedMotion="user">
-      <LenisSmoothScroll>
-        <BrowserRouter>
+      <BrowserRouter>
+        <LenisSmoothScroll>
           <App />
-        </BrowserRouter>
-      </LenisSmoothScroll>
+        </LenisSmoothScroll>
+      </BrowserRouter>
     </MotionConfig>
   </React.StrictMode>,
 );

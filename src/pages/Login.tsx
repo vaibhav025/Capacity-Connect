@@ -37,6 +37,7 @@ export function Login() {
           <span className="brand-mark">✦</span> CAPACITY CONNECT
         </div>
         <div className="form-copy">
+          <p className="eyebrow">IMD · MINISTRY OF EARTH SCIENCES</p>
           <h2>Welcome back</h2>
           <p>Sign in to your learning workspace.</p>
         </div>
@@ -48,11 +49,16 @@ export function Login() {
               role === "admin" ? "admin@imd.gov.in" : role + "@imd.gov.in"
             }
             type="email"
+            autoComplete="username"
           />
         </label>
         <label>
           Password
-          <input defaultValue="password" type="password" />
+          <input
+            defaultValue="password"
+            type="password"
+            autoComplete="current-password"
+          />
         </label>
         <div className="demo-roles">
           <small>Demo role</small>

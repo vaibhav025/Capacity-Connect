@@ -1,6 +1,8 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { AnimatedCounter } from "./AnimatedCounter";
 import { spring } from "./AnimatedButtons";
 export function Stat({
   icon: Icon,
@@ -22,15 +24,27 @@ export function Stat({
       ? label.includes("approvals") || label.includes("users")
         ? "/admin/users"
         : "/admin/competency-mapping"
-      : "/" + role + "/courses";
+      : "/" +
+        role +
+        "/" +
+        (label === "Assessments"
+          ? "assessments"
+          : label === "Certificates"
+            ? "certificates"
+            : role === "trainer" &&
+                [
+                  "Learners reached",
+                  "Learner rating",
+                  "Participation",
+                  "Average score",
+                  "Pass rate",
+                ].includes(label)
+              ? "performance"
+              : "courses");
   return (
     <motion.div
       className="stat-card group relative"
-      whileHover={
-        reduce
-          ? undefined
-          : { y: -5, scale: 1.02, boxShadow: "0 16px 35px #12344a15" }
-      }
+      whileHover={reduce ? undefined : { y: -3 }}
       transition={spring}
     >
       <div className={"stat-icon " + tone}>
@@ -38,7 +52,9 @@ export function Stat({
       </div>
       <div>
         <span>{label}</span>
-        <strong>{value}</strong>
+        <strong>
+          <AnimatedCounter value={value} />
+        </strong>
         <small>{meta}</small>
       </div>
       <Link to={href} className="stat-quick" aria-label={"Explore " + label}>

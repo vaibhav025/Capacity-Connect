@@ -1,12 +1,13 @@
-import { useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useReducedMotion } from "../../lib/motion";
+
+import { useId, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
+  Area,
+  AreaChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,10 +20,12 @@ export function InteractiveKPICharts({
   variant?: "activity" | "courses";
 }) {
   const reduce = useReducedMotion();
+  const gradient = useId().replaceAll(":", "");
+  const [months, setMonths] = useState(6);
   const [active, setActive] = useState<string | null>(null);
   if (variant === "courses")
     return (
-      <div>
+      <div role="group" aria-label="Sample course completion chart">
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={courses} layout="vertical" margin={{ right: 20 }}>
             <CartesianGrid
@@ -41,7 +44,7 @@ export function InteractiveKPICharts({
             <Bar
               dataKey="progress"
               name="Completion %"
-              fill="#0c7c9e"
+              fill="var(--brand-primary)"
               radius={[0, 5, 5, 0]}
               isAnimationActive={!reduce}
               animationBegin={0}
@@ -52,7 +55,7 @@ export function InteractiveKPICharts({
               {courses.map((course) => (
                 <Cell
                   key={course.id}
-                  fill={course.accent}
+                  fill="var(--brand-primary)"
                   fillOpacity={!active || active === course.id ? 1 : 0.25}
                 />
               ))}
@@ -75,9 +78,34 @@ export function InteractiveKPICharts({
       </div>
     );
   return (
-    <div>
+    <div role="group" aria-label="Sample learning activity chart">
+      <label className="chart-period">
+        Time period{" "}
+        <select
+          aria-label="Learning activity time period"
+          value={months}
+          onChange={(event) => setMonths(Number(event.target.value))}
+        >
+          <option value={6}>Last 6 months</option>
+          <option value={3}>Last 3 months</option>
+        </select>
+      </label>
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData}>
+        <AreaChart data={chartData.slice(-months)} accessibilityLayer>
+          <defs>
+            <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="0%"
+                stopColor="var(--brand-primary)"
+                stopOpacity={0.2}
+              />
+              <stop
+                offset="100%"
+                stopColor="var(--brand-primary)"
+                stopOpacity={0.01}
+              />
+            </linearGradient>
+          </defs>
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
@@ -87,23 +115,46 @@ export function InteractiveKPICharts({
           <YAxis axisLine={false} tickLine={false} />
           <Tooltip />
           {["enrollments", "completion"].map((key, index) => (
-            <Line
+            <Area
               key={key}
               type="monotone"
               dataKey={key}
-              stroke={index ? "#83c9d6" : "#0c7c9e"}
+              stroke={index ? "var(--brand-secondary)" : "var(--brand-primary)"}
+              fill={index ? "transparent" : `url(#${gradient})`}
               strokeWidth={3}
               strokeOpacity={!active || active === key ? 1 : 0.2}
               dot={false}
               activeDot={{ r: 6 }}
               isAnimationActive={!reduce}
-              animationDuration={1200}
+              animationDuration={750}
               onMouseEnter={() => setActive(key)}
               onMouseLeave={() => setActive(null)}
             />
           ))}
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
+      <details className="chart-data">
+        <summary>View chart data</summary>
+        <table>
+          <caption className="sr-only">Learning activity sample data</caption>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Enrollments</th>
+              <th>Completions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {chartData.slice(-months).map((row) => (
+              <tr key={row.month}>
+                <td>{row.month}</td>
+                <td>{row.enrollments}</td>
+                <td>{row.completion}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
       <div className="chart-controls">
         {["enrollments", "completion"].map((key) => (
           <button

@@ -1,4 +1,6 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Award } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { emptyLearning, saveLearning, useDemo } from "../../lib/demoStore";
@@ -89,7 +91,8 @@ export function AssessmentPlayer({ courseId }: { courseId?: string }) {
     );
   if (index === courseQuestions.length)
     return (
-      <section className="panel" role="status">
+      <section className="panel assessment-result" role="status">
+        <Award size={48} strokeWidth={1.25} />
         <h3>{courseId ? "Knowledge check complete" : "Practice complete"}</h3>
         <p className="my-4">
           {
@@ -123,7 +126,38 @@ export function AssessmentPlayer({ courseId }: { courseId?: string }) {
       </section>
     );
   return (
-    <section className="panel">
+    <section className="panel assessment-focus">
+      <div className="assessment-meta">
+        <span>{courseQuestions.length} questions</span>
+        <span>Untimed knowledge check</span>
+        <span>70% to pass</span>
+      </div>
+      <div
+        className="progress"
+        role="progressbar"
+        aria-label="Questions answered"
+        aria-valuemin={0}
+        aria-valuemax={courseQuestions.length}
+        aria-valuenow={answers.filter((answer) => answer !== undefined).length}
+      >
+        <i
+          style={{
+            width: `${(answers.filter((answer) => answer !== undefined).length / courseQuestions.length) * 100}%`,
+          }}
+        />
+      </div>
+      <div className="question-nav" aria-label="Question navigator">
+        {courseQuestions.map((_, question) => (
+          <button
+            key={question}
+            aria-label={`Go to question ${question + 1}`}
+            aria-current={index === question ? "step" : undefined}
+            onClick={() => setIndex(question)}
+          >
+            {question + 1}
+          </button>
+        ))}
+      </div>
       <p className="eyebrow mb-4">
         {courseId ? "RECORDED DEMO CHECK" : "PRACTICE"} · {index + 1} /{" "}
         {courseQuestions.length}
@@ -159,7 +193,12 @@ export function AssessmentPlayer({ courseId }: { courseId?: string }) {
       </AnimatePresence>
       <AnimatedButtons
         className="primary mt-5"
-        disabled={answers[index] === undefined}
+        disabled={
+          answers[index] === undefined ||
+          (index === courseQuestions.length - 1 &&
+            answers.filter((answer) => answer !== undefined).length <
+              courseQuestions.length)
+        }
         onClick={() => {
           if (courseId && index === courseQuestions.length - 1) {
             const score = Math.round(

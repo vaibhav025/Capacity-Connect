@@ -1,4 +1,7 @@
+import { useReducedMotion } from "../../lib/motion";
 import {
+  PanelLeftClose,
+  PanelLeftOpen,
   Activity,
   Award,
   Bell,
@@ -13,7 +16,10 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import { SearchCommand } from "../ui/SearchCommand";
+import { SkeletonLoaders } from "../ui/SkeletonLoaders";
 import {
   Link,
   Navigate,
@@ -24,21 +30,112 @@ import {
 } from "react-router-dom";
 
 import type { LucideIcon } from "lucide-react";
-import { Announcements } from "../../pages/Announcements";
-import { Assessments } from "../../pages/Assessments";
-import { Certificates } from "../../pages/Certificates";
-import { Competency } from "../../pages/Competency";
-import { CourseDetail } from "../../pages/CourseDetail";
-import { Courses } from "../../pages/Courses";
-import { Dashboard } from "../../pages/Dashboard";
-import { LibraryPage } from "../../pages/LibraryPage";
-import { Performance } from "../../pages/Performance";
-import { Profile } from "../../pages/Profile";
-import { UsersPage } from "../../pages/UsersPage";
+const Announcements = lazy(() =>
+  import("../../pages/Announcements").then((module) => ({
+    default: module.Announcements,
+  })),
+);
+const Assessments = lazy(() =>
+  import("../../pages/Assessments").then((module) => ({
+    default: module.Assessments,
+  })),
+);
+const Certificates = lazy(() =>
+  import("../../pages/Certificates").then((module) => ({
+    default: module.Certificates,
+  })),
+);
+const Competency = lazy(() =>
+  import("../../pages/Competency").then((module) => ({
+    default: module.Competency,
+  })),
+);
+const CourseDetail = lazy(() =>
+  import("../../pages/CourseDetail").then((module) => ({
+    default: module.CourseDetail,
+  })),
+);
+const Courses = lazy(() =>
+  import("../../pages/Courses").then((module) => ({ default: module.Courses })),
+);
+const Dashboard = lazy(() =>
+  import("../../pages/Dashboard").then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+const LibraryPage = lazy(() =>
+  import("../../pages/LibraryPage").then((module) => ({
+    default: module.LibraryPage,
+  })),
+);
+const Performance = lazy(() =>
+  import("../../pages/Performance").then((module) => ({
+    default: module.Performance,
+  })),
+);
+const Profile = lazy(() =>
+  import("../../pages/Profile").then((module) => ({ default: module.Profile })),
+);
+const UsersPage = lazy(() =>
+  import("../../pages/UsersPage").then((module) => ({
+    default: module.UsersPage,
+  })),
+);
 import type { Role } from "../../types/domain";
 import { AnimatedPageTransition } from "./AnimatedPageTransition";
 export function Shell({ role }: { role: Role }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [mobile, setMobile] = useState(false);
+  const sidebar = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+  const reduce = useReducedMotion();
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", (value) => setCompact(value > 32));
+  useEffect(() => {
+    const media = matchMedia("(max-width: 760px)");
+    const sync = () => {
+      setMobile(media.matches);
+      if (!media.matches) setOpen(false);
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    if (!open) {
+      if (wasOpen.current) menu.current?.focus();
+      wasOpen.current = false;
+      return;
+    }
+    wasOpen.current = true;
+    const element = sidebar.current;
+    element?.querySelector<HTMLButtonElement>(".close-side")?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menu.current?.focus();
+      }
+      if (event.key === "Tab") {
+        const nodes = Array.from(
+          element?.querySelectorAll<HTMLElement>("a,button") || [],
+        ).filter((node) => node.offsetParent !== null);
+        const first = nodes[0],
+          last = nodes[nodes.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [open]);
   const loc = useLocation();
   const nav = useNavigate();
   const navs: [string, string, LucideIcon][] =
@@ -66,8 +163,32 @@ export function Shell({ role }: { role: Role }) {
             ["profile", "My profile", Users],
           ];
   return (
-    <div className="app-shell">
-      <aside className={open ? "open" : ""}>
+    <div
+      className={`app-shell ${collapsed && !mobile ? "sidebar-collapsed" : ""}`}
+    >
+      <a className="skip-link" href="#workspace-content">
+        Skip to content
+      </a>
+      {open && (
+        <button
+          className="nav-backdrop"
+          aria-label="Dismiss navigation"
+          onClick={() => {
+            setOpen(false);
+            menu.current?.focus();
+          }}
+        />
+      )}
+      <motion.aside
+        ref={sidebar}
+        id="workspace-navigation"
+        data-lenis-prevent
+        aria-label="Workspace navigation"
+        inert={mobile && !open}
+        className={open ? "open" : ""}
+        animate={{ width: mobile ? 270 : collapsed ? 80 : 250 }}
+        transition={{ duration: reduce ? 0 : 0.22 }}
+      >
         <div className="side-top">
           <div className="brand">
             <span className="brand-mark">✦</span> CAPACITY
@@ -77,7 +198,10 @@ export function Shell({ role }: { role: Role }) {
           <button
             aria-label="Close navigation"
             className="close-side"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              menu.current?.focus();
+            }}
           >
             <X />
           </button>
@@ -88,14 +212,26 @@ export function Shell({ role }: { role: Role }) {
           <span className="status-dot" />
         </div>
         <p className="nav-label">WORKSPACE</p>
-        <nav>
+        <nav aria-label="Main navigation">
           {navs.map(([path, label, Icon]) => (
             <Link
+              aria-label={label}
+              title={collapsed ? label : undefined}
+              aria-current={
+                loc.pathname.includes("/" + path) ? "page" : undefined
+              }
               onClick={() => setOpen(false)}
               className={loc.pathname.includes("/" + path) ? "active" : ""}
               to={`/${role}/${path}`}
               key={path}
             >
+              {loc.pathname.includes("/" + path) && (
+                <motion.i
+                  className="nav-active-indicator"
+                  layoutId="navigation-indicator"
+                  transition={{ duration: reduce ? 0 : 0.2 }}
+                />
+              )}
               <Icon size={18} />
               <span>{label}</span>
               {path === "users" && <b className="count">8</b>}
@@ -103,6 +239,21 @@ export function Shell({ role }: { role: Role }) {
           ))}
         </nav>
         <div className="side-bottom">
+          <button
+            className="collapse-sidebar"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={18} />
+            ) : (
+              <>
+                <PanelLeftClose size={18} />
+                <span>Collapse workspace</span>
+              </>
+            )}
+          </button>
           <div className="mini-profile">
             <div className="avatar">
               {role === "admin" ? "AS" : role === "trainer" ? "AR" : "VK"}
@@ -122,10 +273,13 @@ export function Shell({ role }: { role: Role }) {
             <LogOut size={17} /> Sign out
           </button>
         </div>
-      </aside>
-      <main>
-        <header>
+      </motion.aside>
+      <main inert={mobile && open}>
+        <header className={compact ? "compact" : ""}>
           <button
+            ref={menu}
+            aria-expanded={open}
+            aria-controls="workspace-navigation"
             aria-label="Open navigation"
             className="menu"
             onClick={() => setOpen(true)}
@@ -140,6 +294,7 @@ export function Shell({ role }: { role: Role }) {
             </strong>
           </div>
           <div className="header-actions">
+            <SearchCommand role={role} />
             <label className="demo-switch">
               <span>Demo role</span>
               <select
@@ -162,41 +317,53 @@ export function Shell({ role }: { role: Role }) {
               <Bell size={19} />
               <i />
             </Link>
-            <div className="top-avatar">
+            <Link
+              className="top-avatar"
+              aria-label="Open professional profile"
+              to={`/${role}/profile`}
+            >
               {role === "admin" ? "AS" : role === "trainer" ? "AR" : "VK"}
-            </div>
+            </Link>
           </div>
         </header>
-        <div className="content">
+        <div className="content" id="workspace-content" tabIndex={-1}>
           <div className="demo-banner">
             Interactive prototype · Sample organisational statistics · Your
             learning changes save in this browser
           </div>
           <AnimatedPageTransition pageKey={loc.pathname}>
-            <Routes location={loc}>
-              <Route path="dashboard" element={<Dashboard role={role} />} />
-              <Route path="courses" element={<Courses role={role} />} />
-              <Route
-                path="courses/:id"
-                element={<CourseDetail role={role} />}
-              />
-              {role === "admin" && (
-                <Route path="competency-mapping" element={<Competency />} />
-              )}
-              {role === "admin" && (
-                <Route path="users" element={<UsersPage />} />
-              )}
-              <Route
-                path="announcements"
-                element={<Announcements role={role} />}
-              />
-              <Route path="library" element={<LibraryPage />} />
-              <Route path="assessments" element={<Assessments role={role} />} />
-              <Route path="performance" element={<Performance />} />
-              <Route path="certificates" element={<Certificates />} />
-              <Route path="profile" element={<Profile role={role} />} />
-              <Route path="*" element={<Navigate to="dashboard" replace />} />
-            </Routes>
+            <Suspense fallback={<SkeletonLoaders />}>
+              <Routes location={loc}>
+                <Route path="dashboard" element={<Dashboard role={role} />} />
+                <Route path="courses" element={<Courses role={role} />} />
+                <Route
+                  path="courses/:id"
+                  element={<CourseDetail role={role} />}
+                />
+                {role === "admin" && (
+                  <Route path="competency-mapping" element={<Competency />} />
+                )}
+                {role === "admin" && (
+                  <Route path="users" element={<UsersPage />} />
+                )}
+                <Route
+                  path="announcements"
+                  element={<Announcements role={role} />}
+                />
+                <Route path="library" element={<LibraryPage />} />
+                <Route
+                  path="assessments"
+                  element={<Assessments role={role} />}
+                />
+                <Route path="performance" element={<Performance />} />
+                <Route path="certificates" element={<Certificates />} />
+                <Route
+                  path="profile"
+                  element={<Profile key={role} role={role} />}
+                />
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
+              </Routes>
+            </Suspense>
           </AnimatedPageTransition>
         </div>
       </main>

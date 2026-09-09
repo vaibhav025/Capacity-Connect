@@ -70,8 +70,11 @@ export function Courses({ role }: { role: Role }) {
         {filtered.length} learning paths · Designed for real-world impact
       </p>
       <div className="course-grid">
-        {filtered.map((course) => (
-          <ScrollRevealWrapper key={course.id}>
+        {filtered.map((course, index) => (
+          <ScrollRevealWrapper
+            key={course.id}
+            delay={Math.min(index * 0.06, 0.24)}
+          >
             <CourseCatalogCard
               course={
                 role === "trainee"

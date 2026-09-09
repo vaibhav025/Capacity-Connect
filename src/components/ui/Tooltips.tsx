@@ -1,4 +1,9 @@
-import { useId, type PropsWithChildren } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useId,
+  type PropsWithChildren,
+} from "react";
 export function Tooltips({
   children,
   label,
@@ -6,7 +11,13 @@ export function Tooltips({
   const id = useId();
   return (
     <span className="tooltip-host">
-      {children}
+      {isValidElement<{ "aria-describedby"?: string }>(children)
+        ? cloneElement(children, {
+            "aria-describedby": [children.props["aria-describedby"], id]
+              .filter(Boolean)
+              .join(" "),
+          })
+        : children}
       <span id={id} role="tooltip" className="tooltip-label">
         {label}
       </span>

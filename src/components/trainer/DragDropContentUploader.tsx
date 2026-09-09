@@ -1,4 +1,5 @@
-import { Reorder, useDragControls, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { Reorder, useDragControls } from "framer-motion";
 import {
   ArrowDown,
   ArrowUp,

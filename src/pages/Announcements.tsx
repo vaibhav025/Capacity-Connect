@@ -2,22 +2,55 @@ import { useState } from "react";
 import { PageTitle } from "../components/ui/PageTitle";
 import { updateDemo, useDemo } from "../lib/demoStore";
 import type { Role } from "../types/domain";
-export function AnnouncementFeed({ role }: { role: Role }) {
+export function AnnouncementFeed({
+  role,
+  filter = "All updates",
+}: {
+  role: Role;
+  filter?: string;
+}) {
+  const [expanded, setExpanded] = useState<string[]>([]);
   const { notices } = useDemo();
   const visible = notices.filter(
     (item) =>
-      role === "admin" || item.audience === "all" || item.audience === role,
+      (role === "admin" || item.audience === "all" || item.audience === role) &&
+      (filter === "All updates" || item.kind === filter),
   );
   return (
     <div className="announcement-list">
       {visible.map((item) => (
-        <article className="panel notice full" key={item.id}>
+        <article
+          className="panel notice full"
+          data-kind={item.kind}
+          key={item.id}
+        >
           <span className="notice-tag">
             {item.kind.toUpperCase()} ·{" "}
             {item.audience === "all" ? "EVERYONE" : item.audience.toUpperCase()}
           </span>
           <h3>{item.title}</h3>
-          <p className="whitespace-pre-wrap">{item.body}</p>
+          <p className="whitespace-pre-wrap">
+            {item.body.length > 260 && !expanded.includes(item.id)
+              ? item.body.slice(0, 260) + "..."
+              : item.body}
+          </p>
+          {item.body.length > 260 && (
+            <button
+              className="notice-expand"
+              aria-expanded={expanded.includes(item.id)}
+              onClick={() =>
+                setExpanded((previous) =>
+                  previous.includes(item.id)
+                    ? previous.filter((id) => id !== item.id)
+                    : [...previous, item.id],
+                )
+              }
+            >
+              {expanded.includes(item.id)
+                ? "Show less"
+                : "Read full announcement"}
+            </button>
+          )}
           <small>
             {new Date(item.date).toLocaleDateString("en-IN")} · Training office
           </small>
@@ -28,6 +61,12 @@ export function AnnouncementFeed({ role }: { role: Role }) {
   );
 }
 export function Announcements({ role = "admin" }: { role?: Role }) {
+  const { notices } = useDemo();
+  const [filter, setFilter] = useState("All updates");
+  const categories = [
+    "All updates",
+    ...new Set(notices.map((notice) => notice.kind)),
+  ];
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState("");
   return (
@@ -92,11 +131,17 @@ export function Announcements({ role = "admin" }: { role?: Role }) {
             <label>
               Type
               <select name="kind">
-                {["Training", "Announcement", "Achievement", "New content"].map(
-                  (kind) => (
-                    <option key={kind}>{kind}</option>
-                  ),
-                )}
+                {[
+                  "Training",
+                  "Announcement",
+                  "Achievement",
+                  "New content",
+                  "Assessment",
+                  "Urgent",
+                  "Event",
+                ].map((kind) => (
+                  <option key={kind}>{kind}</option>
+                ))}
               </select>
             </label>
             <label>
@@ -112,7 +157,19 @@ export function Announcements({ role = "admin" }: { role?: Role }) {
         </form>
       )}
       <p role="status">{status}</p>
-      <AnnouncementFeed role={role} />
+      <div className="filters" aria-label="Filter announcements">
+        {categories.map((category) => (
+          <button
+            key={category}
+            className={`filter ${filter === category ? "active" : ""}`}
+            aria-pressed={filter === category}
+            onClick={() => setFilter(category)}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+      <AnnouncementFeed role={role} filter={filter} />
     </>
   );
 }

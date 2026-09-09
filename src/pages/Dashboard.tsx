@@ -78,7 +78,7 @@ export function Dashboard({ role }: { role: Role }) {
                 <h3>Learning activity</h3>
                 <p>Enrollments and completions · last 6 months</p>
               </div>
-              <button className="filter">Last 6 months⌄</button>
+              <span className="pill">Sample data</span>
             </div>
             <InteractiveKPICharts />
             <div className="legend">
@@ -293,7 +293,7 @@ export function Dashboard({ role }: { role: Role }) {
                     style={{
                       width:
                         (role === "trainer"
-                          ? c.learners * 2
+                          ? Math.min(100, c.learners * 2)
                           : progressOf(learning[c.id])) + "%",
                     }}
                   />

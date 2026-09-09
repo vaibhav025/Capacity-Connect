@@ -1,3 +1,5 @@
+import { useReducedMotion } from "../lib/motion";
+
 import { Activity, CheckCircle2, Users } from "lucide-react";
 import {
   Bar,
@@ -14,6 +16,7 @@ import { Stat } from "../components/ui/Stat";
 import { courses } from "../data/demo";
 import { progressOf, useDemo } from "../lib/demoStore";
 export function Performance() {
+  const reduce = useReducedMotion();
   const { learning, profiles } = useDemo();
   return (
     <>
@@ -123,7 +126,12 @@ export function Performance() {
             <XAxis dataKey="score" axisLine={false} tickLine={false} />
             <YAxis axisLine={false} tickLine={false} />
             <Tooltip />
-            <Bar dataKey="count" fill="#0c7c9e" radius={[5, 5, 0, 0]} />
+            <Bar
+              isAnimationActive={!reduce}
+              dataKey="count"
+              fill="var(--brand-primary)"
+              radius={[5, 5, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </section>

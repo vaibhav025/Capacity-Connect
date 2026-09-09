@@ -1,4 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "../../lib/motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { BrainCircuit, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatedButtons } from "../ui/AnimatedButtons";
@@ -8,6 +9,9 @@ type Match = {
   name: string;
   score: number;
   explanation: string;
+  breakdown?: Record<string, number>;
+  matched?: string[];
+  missing?: string[];
 };
 export function CompetencyMatchModal({
   open,
@@ -164,6 +168,60 @@ export function CompetencyMatchModal({
                 <p className="mt-3 text-sm leading-relaxed text-slate-500">
                   {match.explanation}
                 </p>
+                {match.breakdown && (
+                  <div
+                    className="evidence-matrix"
+                    aria-label={`Evidence for ${match.name}`}
+                  >
+                    {Object.entries(match.breakdown)
+                      .filter(
+                        ([, value]) =>
+                          typeof value === "number" && Number.isFinite(value),
+                      )
+                      .map(([name, value]) => (
+                        <div key={name}>
+                          <span>{name}</span>
+                          <div
+                            className="progress"
+                            role="meter"
+                            aria-label={name}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(
+                              Math.max(0, Math.min(1, value)) * 100,
+                            )}
+                          >
+                            <i
+                              style={{
+                                width: `${Math.max(0, Math.min(1, value)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <strong>
+                            {Math.round(Math.max(0, Math.min(1, value)) * 100)}%
+                          </strong>
+                        </div>
+                      ))}
+                  </div>
+                )}
+                {Array.isArray(match.matched) && (
+                  <div className="evidence-skills">
+                    {match.matched
+                      .filter((skill) => typeof skill === "string")
+                      .map((skill) => (
+                        <span key={skill}>Matched · {skill}</span>
+                      ))}
+                  </div>
+                )}
+                {Array.isArray(match.missing) && (
+                  <div className="evidence-skills gaps">
+                    {match.missing
+                      .filter((skill) => typeof skill === "string")
+                      .map((skill) => (
+                        <span key={skill}>Evidence gap · {skill}</span>
+                      ))}
+                  </div>
+                )}
               </article>
             ))}
           </motion.div>
