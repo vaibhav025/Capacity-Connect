@@ -1,0 +1,228 @@
+.demo-banner {
+  padding: 10px 14px;
+  background: #e8f2f3;
+  border: 1px solid #d3e6e9;
+  border-radius: 8px;
+  color: #426873;
+  font-size: 11px;
+  margin-bottom: 22px;
+}
+.demo-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #526e79;
+}
+.demo-switch select {
+  border: 1px solid #cedee4;
+  padding: 7px;
+  border-radius: 7px;
+  background: white;
+}
+.readiness-hero {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 36px;
+  padding: 34px;
+  margin-bottom: 30px;
+  border-radius: 20px;
+  color: white;
+  background:
+    radial-gradient(ellipse at 100% 0%, #24636c 0%, transparent 60%), #102f42;
+  position: relative;
+  overflow: hidden;
+}
+.readiness-hero .eyebrow {
+  color: #9adbd5;
+  font-size: 9px;
+}
+.readiness-copy h2 {
+  font-size: clamp(24px, 2.5vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  margin: 17px 0;
+  max-width: 530px;
+}
+.readiness-copy > p:not(.eyebrow) {
+  color: #b7d0d7;
+  line-height: 1.7;
+  font-size: 13px;
+  max-width: 470px;
+}
+.mission-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  color: #b3ede3;
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+.readiness-evidence {
+  align-self: center;
+  background: #ffffff0a;
+  border: 1px solid #ffffff24;
+  border-radius: 14px;
+  padding: 24px;
+}
+.readiness-evidence > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #b0dbdf;
+}
+.evidence-numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 24px 0;
+}
+.evidence-numbers strong {
+  font-size: 42px;
+  display: block;
+  line-height: 1.1;
+  font-weight: 500;
+}
+.evidence-numbers small {
+  display: block;
+  font-size: 11px;
+  color: #b6cfd5;
+  margin-top: 9px;
+}
+.readiness-evidence > p {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: 10px;
+  color: #b6cfd5;
+  line-height: 1.6;
+}
+.learning-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.6fr);
+  gap: 22px;
+  align-items: start;
+}
+.lesson-step {
+  display: flex;
+  text-align: left;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid #e2ecef;
+  padding: 16px 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.lesson-step > span {
+  color: #0b7c80;
+  flex-shrink: 0;
+}
+.lesson-step.selected {
+  background: #eaf6f5;
+  border-color: #8fc6c5;
+}
+.lesson-reader h2 {
+  font-size: 28px;
+  margin: 24px 0;
+  line-height: 1.25;
+}
+.lesson-reader > p {
+  line-height: 1.9;
+  color: #456271;
+  font-size: 15px;
+}
+.takeaway {
+  padding: 22px;
+  background: #edf7f5;
+  border-left: 3px solid #318f83;
+  border-radius: 0 10px 10px 0;
+  margin: 24px 0;
+}
+.takeaway p {
+  margin-top: 8px;
+  line-height: 1.7;
+  color: #426c68;
+}
+.support-copy {
+  font-size: 12px !important;
+  line-height: 1.7 !important;
+  color: #5e7782 !important;
+  margin: 18px 0;
+}
+.feedback-form {
+  margin: 22px 0;
+}
+.feedback-form label,
+.profile-panel label {
+  display: block;
+  margin: 18px 0;
+  font-size: 12px;
+  color: #385767;
+}
+.feedback-form input,
+.feedback-form select,
+.feedback-form textarea,
+.profile-panel input {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbdce2;
+  border-radius: 8px;
+  margin-top: 8px;
+  background: white;
+  font: inherit;
+  color: #17384d;
+}
+textarea:focus-visible {
+  outline: 3px solid #36a8b7;
+  outline-offset: 3px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  padding: 56px 24px;
+}
+.empty-state > p {
+  max-width: 470px;
+  line-height: 1.7;
+  color: #5e7782;
+}
+.announcement-list {
+  display: grid;
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .readiness-hero {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .learning-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .readiness-hero {
+    padding: 24px;
+  }
+  .demo-switch > span {
+    display: none;
+  }
+  .header-actions {
+    gap: 12px;
+  }
+  .crumb {
+    font-size: 10px;
+  }
+  .readiness-evidence {
+    padding: 20px;
+  }
+}

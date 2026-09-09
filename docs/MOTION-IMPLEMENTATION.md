@@ -1,4 +1,610 @@
-﻿@import "./motion.css";
+# Capacity Connect motion implementation
+
+## Installation commands
+
+Run from the project directory:
+
+```powershell
+npm install framer-motion@13.2.0 three@0.134.0 vanta@0.5.24 lucide-react@0.468.0 @studio-freight/lenis@1.0.42 recharts@3.10.1 tailwindcss@4.3.3 @tailwindcss/vite@4.3.3
+npm install -D @types/three@0.134.0 @types/node@26.5.0
+```
+
+For this checked-out implementation, use `npm ci` to reproduce package-lock.json.
+The requested @studio-freight/lenis package is deprecated in favor of lenis; it is retained to match the request. Three r134 matches Vanta's documented integration: [Vanta documentation](https://github.com/tengbao/vanta#readme).
+
+## Directory tree
+
+```text
+src/
+├── App.tsx
+├── main.tsx
+├── styles.css
+├── motion.css
+├── components/
+│   ├── layout/
+│   │   ├── LenisSmoothScroll.tsx
+│   │   ├── InteractiveHero.tsx
+│   │   ├── AnimatedPageTransition.tsx
+│   │   └── Shell.tsx
+│   ├── ui/
+│   │   ├── AnimatedButtons.tsx
+│   │   ├── ScrollRevealWrapper.tsx
+│   │   ├── Tooltips.tsx
+│   │   ├── SkeletonLoaders.tsx
+│   │   ├── PageTitle.tsx
+│   │   └── Stat.tsx
+│   ├── trainee/
+│   │   ├── CourseCatalogCard.tsx
+│   │   ├── AssessmentPlayer.tsx
+│   │   └── AnimatedProgressRing.tsx
+│   ├── trainer/
+│   │   ├── DragDropContentUploader.tsx
+│   │   └── QuestionnaireBuilder.tsx
+│   └── admin/
+│       ├── InteractiveKPICharts.tsx
+│       ├── UserApprovalTable.tsx
+│       └── CompetencyMatchModal.tsx
+├── data/demo.ts
+├── lib/supabase.ts
+├── pages/ (role screens and route composition)
+└── types/
+    ├── domain.ts
+    └── vanta.d.ts
+```
+
+## Complete critical component code
+
+These are exact copies of the implementation, not abbreviated examples. Supporting imports, global styling, and root integration follow the four components.
+
+### A. Global Lenis wrapper
+
+File: `src/components/layout/LenisSmoothScroll.tsx`
+
+```tsx
+import Lenis from "@studio-freight/lenis";
+import { useEffect, type PropsWithChildren } from "react";
+
+/** One scroll owner; keeps native touch, keyboard and reduced-motion scrolling. */
+export function LenisSmoothScroll({ children }: PropsWithChildren) {
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let lenis: Lenis | undefined;
+    let frame = 0;
+    const stop = () => {
+      cancelAnimationFrame(frame);
+      lenis?.destroy();
+      lenis = undefined;
+    };
+    const configure = () => {
+      stop();
+      if (preference.matches) return;
+      lenis = new Lenis({ lerp: 0.085, smoothWheel: true, syncTouch: false });
+      const tick = (time: number) => {
+        lenis?.raf(time);
+        frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    };
+    configure();
+    preference.addEventListener("change", configure);
+    return () => {
+      preference.removeEventListener("change", configure);
+      stop();
+    };
+  }, []);
+  return <>{children}</>;
+}
+```
+
+### B. Interactive Vanta hero
+
+File: `src/components/layout/InteractiveHero.tsx`
+
+```tsx
+import { useEffect, useRef, type PropsWithChildren } from "react";
+
+/** Isolated canvas host prevents Vanta from mutating React-owned content. */
+export function InteractiveHero({ children }: PropsWithChildren) {
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    let effect: VantaEffect | undefined;
+    let generation = 0;
+    let disposed = false;
+    let visible = true;
+    let failed = false;
+    const destroy = () => {
+      const current = effect;
+      effect = undefined;
+      if (!current) return;
+      const renderer = current.renderer;
+      try {
+        current.destroy();
+      } finally {
+        renderer?.dispose();
+        renderer?.forceContextLoss();
+        element.replaceChildren();
+      }
+    };
+    const reconcile = async () => {
+      const request = ++generation;
+      destroy();
+      if (
+        disposed ||
+        failed ||
+        preference.matches ||
+        document.hidden ||
+        !visible
+      )
+        return;
+      try {
+        const [THREE, { default: NET }] = await Promise.all([
+          import("three"),
+          import("vanta/dist/vanta.net.min.js"),
+        ]);
+        if (disposed || request !== generation) return;
+        effect = NET({
+          el: element,
+          THREE,
+          mouseControls: true,
+          touchControls: false,
+          gyroControls: false,
+          minHeight: 200,
+          minWidth: 200,
+          scale: Math.max(1, window.devicePixelRatio || 1),
+          scaleMobile: 2,
+          color: 0x55b6bb,
+          backgroundColor: 0x0d2c40,
+          points: 8,
+          maxDistance: 21,
+          spacing: 18,
+          showDots: true,
+        });
+      } catch (error) {
+        failed = true;
+        destroy();
+        console.warn(
+          "WebGL background unavailable; using the static background.",
+          error,
+        );
+      }
+    };
+    const sync = () => {
+      void reconcile();
+    };
+    const lost = (event: Event) => {
+      event.preventDefault();
+      failed = true;
+      sync();
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (visible !== entry.isIntersecting) {
+        visible = entry.isIntersecting;
+        sync();
+      }
+    });
+    observer.observe(element);
+    const resize = new ResizeObserver(() => effect?.resize());
+    resize.observe(element);
+    preference.addEventListener("change", sync);
+    document.addEventListener("visibilitychange", sync);
+    element.addEventListener("webglcontextlost", lost, true);
+    sync();
+    return () => {
+      disposed = true;
+      generation++;
+      observer.disconnect();
+      resize.disconnect();
+      preference.removeEventListener("change", sync);
+      document.removeEventListener("visibilitychange", sync);
+      element.removeEventListener("webglcontextlost", lost, true);
+      destroy();
+    };
+  }, []);
+  return (
+    <section className="login-art relative isolate overflow-hidden">
+      <div
+        ref={host}
+        aria-hidden="true"
+        className="hero-canvas absolute inset-0 -z-20"
+      />
+      <div aria-hidden="true" className="hero-shade absolute inset-0 -z-10" />
+      {children}
+    </section>
+  );
+}
+```
+
+### C. Scroll-linked reveal
+
+File: `src/components/ui/ScrollRevealWrapper.tsx`
+
+```tsx
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { useRef, type PropsWithChildren } from "react";
+
+export function ScrollRevealWrapper({
+  children,
+  className = "",
+  distance = 32,
+}: PropsWithChildren<{ className?: string; distance?: number }>) {
+  const target = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(
+    scrollYProgress,
+    [0, 0.3, 1],
+    [distance, 0, -distance / 3],
+  );
+  const opacity = useTransform(scrollYProgress, [0, 0.18, 1], [0.15, 1, 1]);
+  return (
+    <div ref={target} className={className}>
+      <motion.div style={reduce ? undefined : { y, opacity }}>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+```
+
+### D. Interactive course card
+
+File: `src/components/trainee/CourseCatalogCard.tsx`
+
+```tsx
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowUpRight,
+  BookOpen,
+  Bookmark,
+  Check,
+  Clock3,
+  Users,
+} from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import type { Course, Role } from "../../types/domain";
+import { AnimatedButtons, spring } from "../ui/AnimatedButtons";
+import { Tooltips } from "../ui/Tooltips";
+import { AnimatedProgressRing } from "./AnimatedProgressRing";
+
+export function CourseCatalogCard({
+  course,
+  role = "trainee",
+}: {
+  course: Course;
+  role?: Role;
+}) {
+  const reduce = useReducedMotion();
+  const [saved, setSaved] = useState(false);
+  const href = `/${role}/courses/${course.id}`;
+  return (
+    <motion.article
+      className="course-card group relative h-full"
+      whileHover={
+        reduce
+          ? undefined
+          : { y: -6, scale: 1.02, boxShadow: "0 22px 50px -18px #12344a40" }
+      }
+      transition={spring}
+    >
+      <div className="course-banner" style={{ backgroundColor: course.accent }}>
+        <span>{course.category}</span>
+        <BookOpen size={30} aria-hidden="true" />
+        <div className="course-banner-grid" aria-hidden="true" />
+        <div className="quick-actions">
+          <Tooltips label={saved ? "Remove bookmark" : "Bookmark course"}>
+            <AnimatedButtons
+              className="bookmark-button"
+              aria-label={saved ? "Remove bookmark" : "Bookmark course"}
+              aria-pressed={saved}
+              onClick={() => setSaved(!saved)}
+            >
+              {saved ? <Check size={17} /> : <Bookmark size={17} />}
+            </AnimatedButtons>
+          </Tooltips>
+          <Link
+            className="bookmark-button"
+            to={href}
+            aria-label={`Preview ${course.title}`}
+          >
+            <ArrowUpRight size={17} />
+          </Link>
+        </div>
+      </div>
+      <div className="course-card-body">
+        <div className="flex items-center justify-between gap-3">
+          <small className="course-code">{course.code}</small>
+          <span className="pill">{course.level}</span>
+        </div>
+        <h3>
+          <Link to={href}>{course.title}</Link>
+        </h3>
+        <p>
+          Build practical capability through guided modules, field notes and an
+          applied assessment.
+        </p>
+        <div className="course-meta">
+          <span>
+            <Clock3 size={14} /> {course.duration}
+          </span>
+          <span>
+            <Users size={14} /> {course.learners} learners
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
+          <div>
+            <small className="course-code">
+              {role === "trainer" ? "LEARNER COMPLETION" : "YOUR LEARNING PATH"}
+            </small>
+            <div className="mt-1 text-xs text-slate-500">
+              {course.progress === 100
+                ? "Learning complete"
+                : course.progress > 0
+                  ? "Keep your momentum"
+                  : "Your next opportunity"}
+            </div>
+          </div>
+          <AnimatedProgressRing progress={course.progress} />
+        </div>
+        <motion.div
+          whileTap={reduce ? undefined : { scale: 0.98 }}
+          transition={spring}
+          className="mt-5"
+        >
+          <Link to={href} className="secondary wide">
+            {role === "trainer"
+              ? "Manage course"
+              : course.progress === 100
+                ? "Review course"
+                : course.progress
+                  ? "Continue learning"
+                  : "Explore course"}
+            <ArrowUpRight size={16} />
+          </Link>
+        </motion.div>
+        <span role="status" className="sr-only">
+          {saved ? "Bookmarked for this session" : ""}
+        </span>
+      </div>
+    </motion.article>
+  );
+}
+```
+
+### Supporting progress ring
+
+File: `src/components/trainee/AnimatedProgressRing.tsx`
+
+```tsx
+import { motion, useReducedMotion } from "framer-motion";
+export function AnimatedProgressRing({
+  progress,
+  size = 56,
+}: {
+  progress: number;
+  size?: number;
+}) {
+  const reduce = useReducedMotion();
+  const value = Math.round(
+    Math.min(100, Math.max(0, Number.isFinite(progress) ? progress : 0)),
+  );
+  return (
+    <div
+      role="progressbar"
+      aria-label="Course completion"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      className="progress-ring"
+      style={{ width: size, height: size }}
+    >
+      <svg viewBox="0 0 56 56" aria-hidden="true">
+        <circle
+          cx="28"
+          cy="28"
+          r="23"
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.12"
+          strokeWidth="4"
+        />
+        <motion.circle
+          cx="28"
+          cy="28"
+          r="23"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          transform="rotate(-90 28 28)"
+          initial={reduce ? false : { pathLength: 0 }}
+          animate={{ pathLength: value / 100 }}
+          transition={{ duration: reduce ? 0 : 1.2, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </svg>
+      <span aria-hidden="true">{value}%</span>
+    </div>
+  );
+}
+```
+
+### Supporting animated button
+
+File: `src/components/ui/AnimatedButtons.tsx`
+
+```tsx
+import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
+export const spring = {
+  type: "spring" as const,
+  stiffness: 360,
+  damping: 27,
+  mass: 0.7,
+};
+export function AnimatedButtons({
+  children,
+  disabled,
+  ...props
+}: HTMLMotionProps<"button">) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.button
+      type="button"
+      {...props}
+      disabled={disabled}
+      whileHover={reduce || disabled ? undefined : { y: -2 }}
+      whileTap={reduce || disabled ? undefined : { scale: 0.96 }}
+      transition={spring}
+    >
+      {children}
+    </motion.button>
+  );
+}
+```
+
+### Supporting tooltip
+
+File: `src/components/ui/Tooltips.tsx`
+
+```tsx
+import { useId, type PropsWithChildren } from "react";
+export function Tooltips({
+  children,
+  label,
+}: PropsWithChildren<{ label: string }>) {
+  const id = useId();
+  return (
+    <span className="tooltip-host">
+      {children}
+      <span id={id} role="tooltip" className="tooltip-label">
+        {label}
+      </span>
+    </span>
+  );
+}
+```
+
+### Domain types
+
+File: `src/types/domain.ts`
+
+```tsx
+export type Role = "admin" | "trainer" | "trainee";
+export interface Course {
+  id: string;
+  title: string;
+  code: string;
+  category: string;
+  level: string;
+  duration: string;
+  progress: number;
+  learners: number;
+  tag: string;
+  accent: string;
+}
+```
+
+### Vanta declaration
+
+File: `src/types/vanta.d.ts`
+
+```tsx
+interface VantaEffect {
+  destroy(): void;
+  resize(): void;
+  renderer?: { dispose(): void; forceContextLoss(): void };
+}
+declare module "vanta/dist/vanta.net.min.js" {
+  export default function NET(options: {
+    el: HTMLElement;
+    THREE: typeof import("three");
+    mouseControls: boolean;
+    touchControls: boolean;
+    gyroControls: boolean;
+    minHeight: number;
+    minWidth: number;
+    scale: number;
+    scaleMobile: number;
+    color: number;
+    backgroundColor: number;
+    points: number;
+    maxDistance: number;
+    spacing: number;
+    showDots: boolean;
+  }): VantaEffect;
+}
+```
+
+### Application root
+
+File: `src/main.tsx`
+
+```tsx
+import { MotionConfig } from "framer-motion";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import { LenisSmoothScroll } from "./components/layout/LenisSmoothScroll";
+import "./styles.css";
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <MotionConfig reducedMotion="user">
+      <LenisSmoothScroll>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </LenisSmoothScroll>
+    </MotionConfig>
+  </React.StrictMode>,
+);
+```
+
+### Tailwind and API proxy
+
+File: `vite.config.ts`
+
+```tsx
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: { proxy: { "/api": "http://localhost:4000" } },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: { charts: ["recharts"], motion: ["framer-motion"] },
+      },
+    },
+  },
+});
+```
+
+### Tailwind entry
+
+File: `src/motion.css`
+
+```css
+@import "tailwindcss";
+```
+
+### Complete global styles
+
+File: `src/styles.css`
+
+```css
+@import "./motion.css";
 
 :root {
   font-family: Inter, system-ui, sans-serif;
@@ -1923,3 +2529,20 @@ h3 {
 .panel h3 {
   font-weight: 600;
 }
+```
+
+## Verification and practical limits
+
+Run `npm run typecheck`, `npm run build`, and, with `npm run dev` running, `npm run test:e2e`. Browser tests use locally installed Microsoft Edge; change the channel in playwright.config.ts for a different CI browser.
+
+The four critical components are integrated into the application. Vanta and Three load only on the hero. Cleanup cancels Vanta's loop and listeners, disposes its renderer, releases its context, disconnects observers, and invalidates pending imports. Lenis has one RAF loop and responds to live reduced-motion changes. Touch scrolling stays native. Quick actions work on focus and touch as well as hover.
+
+The full LMS remains a demo: login simulates roles; user approvals, bookmarks, content drafts and questionnaires are session-local; practice results are not recorded. Existing secondary screens retain prototype actions. Live production use requires authenticated API authorization, persistent authoring, signed Storage uploads, and assessment submission services. Competency matching uses the existing Node endpoint through Vite's /api proxy and explicitly labels server demo results. Production must supply its own working /api routing.
+
+Three's lazy chunk exceeds Vite's default 500 kB warning threshold. The build succeeds; no frame-rate guarantee is claimed for untested devices. Browser verification checks lifecycle calls and canvas ownership, not a long-duration GPU memory profile.
+
+Search Summary
+- Commands: webcmd --version; webcmd web fetch --url https://github.com/tengbao/vanta; web open for the Vanta README and Lenis v1.0.42 repository URL.
+- Sources fetched: https://github.com/tengbao/vanta (web tool); installed Vanta and Lenis package source/declarations.
+- Browser fallback: no documentation browser used; no connected browser was available. Isolated Edge used for local application tests.
+- Gaps/failures: Webcmd returned FETCH_BLOCKED; the Lenis repository URL returned an internal fetch error. Installed package declarations were used to verify the Lenis options.
