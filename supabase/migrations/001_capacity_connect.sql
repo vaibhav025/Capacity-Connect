@@ -27,3 +27,107 @@ create policy "approved users see published courses" on public.courses for selec
 create policy "users see own profile" on public.profiles for select using (id=auth.uid()); create policy "users update own profile" on public.profiles for update using (id=auth.uid());
 create policy "trainees manage own enrollments" on public.enrollments for all using (trainee_id=auth.uid()) with check (trainee_id=auth.uid());
 create policy "users see current announcements" on public.announcements for select using (publish_from<=now() and (publish_to is null or publish_to>=now()));
+
+-- Feature 1: Project Suggestions & Submissions
+create table public.project_suggestions(
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null,
+  difficulty text check(difficulty in ('Beginner','Intermediate','Advanced')) default 'Intermediate',
+  tech_stack text[] default '{}',
+  skills_gained text[] default '{}',
+  resources jsonb default '[]',
+  created_by uuid references public.profiles(id),
+  created_at timestamptz not null default now()
+);
+create table public.project_submissions(
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.project_suggestions(id) on delete cascade,
+  trainee_id uuid references public.profiles(id),
+  github_link text,
+  deployed_link text,
+  documentation text,
+  notes text,
+  status text check(status in ('pending','reviewed','approved','needs-revision')) default 'pending',
+  feedback text,
+  submitted_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+
+-- Feature 2: Discussion & Resource Centre
+create table public.discussions(
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  author_id uuid references public.profiles(id),
+  category text default 'General',
+  created_at timestamptz not null default now()
+);
+create table public.discussion_replies(
+  id uuid primary key default gen_random_uuid(),
+  discussion_id uuid references public.discussions(id) on delete cascade,
+  author_id uuid references public.profiles(id),
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create table public.resources(
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  type text check(type in ('PYQ','Syllabus','Notes','Other')) default 'Other',
+  subject text,
+  category text,
+  author_id uuid references public.profiles(id),
+  file_url text,
+  description text,
+  uploaded_at timestamptz not null default now()
+);
+create table public.opportunities(
+  id uuid primary key default gen_random_uuid(),
+  type text check(type in ('hackathon','internship')) not null,
+  title text not null,
+  organization text not null,
+  deadline date,
+  eligibility text,
+  skills_required text[] default '{}',
+  location text,
+  description text,
+  application_link text,
+  created_at timestamptz not null default now()
+);
+
+-- Feature 3: Enhanced Certificates with verification
+alter table public.certificates add column if not exists hash text;
+alter table public.certificates add column if not exists score numeric;
+alter table public.certificates add column if not exists verification_url text;
+
+-- Feature 4: Notifications
+create table public.notifications(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id),
+  title text not null,
+  body text,
+  type text default 'system',
+  read boolean default false,
+  link text,
+  created_at timestamptz not null default now()
+);
+create index notifications_user_idx on public.notifications(user_id, read);
+
+-- Feature 4: Calendar Events
+create table public.calendar_events(
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  type text check(type in ('class','assessment','project','meeting','event','deadline')) default 'event',
+  event_date date not null,
+  end_date date,
+  event_time time,
+  description text,
+  color text default '#0969da',
+  created_by uuid references public.profiles(id),
+  created_at timestamptz not null default now()
+);
+create index calendar_events_date_idx on public.calendar_events(event_date);
+
+-- Feature 4: Extended Audit Trail
+create index audit_logs_actor_idx on public.audit_logs(actor_id);
+create index audit_logs_action_idx on public.audit_logs(action);

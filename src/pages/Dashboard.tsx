@@ -3,11 +3,14 @@ import {
   Award,
   Bell,
   BookOpen,
+  Calendar,
   ChevronRight,
   Clock3,
   FileText,
   Plus,
   Users,
+  Code2,
+  MessageSquare,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -21,8 +24,13 @@ import { ReadinessOverview } from "../components/admin/ReadinessOverview";
 import { AnnouncementFeed } from "./Announcements";
 import { progressOf, useDemo } from "../lib/demoStore";
 export function Dashboard({ role }: { role: Role }) {
-  const { learning } = useDemo();
+  const { learning, calendarEvents } = useDemo();
   const nav = useNavigate();
+  const today = "2026-09-09";
+  const upcomingEvents = calendarEvents
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 4);
   if (role === "admin")
     return (
       <>
@@ -343,6 +351,77 @@ export function Dashboard({ role }: { role: Role }) {
         <h2 className="mb-4 text-lg font-semibold">From the training office</h2>
         <AnnouncementFeed role={role} />
       </section>
+      <UpcomingScheduleWidget events={upcomingEvents} role={role} />
     </>
+  );
+}
+
+function UpcomingScheduleWidget({
+  events,
+  role,
+}: {
+  events: ReturnType<typeof useDemo>["calendarEvents"];
+  role: Role;
+}) {
+  const nav = useNavigate();
+  if (!events.length) return null;
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case "class":
+        return <BookOpen size={14} />;
+      case "assessment":
+        return <FileText size={14} />;
+      case "project":
+        return <Code2 size={14} />;
+      case "meeting":
+        return <Users size={14} />;
+      case "event":
+        return <Calendar size={14} />;
+      case "deadline":
+        return <Bell size={14} />;
+      default:
+        return <Calendar size={14} />;
+    }
+  };
+
+  return (
+    <section className="dashboard-grid mt-6">
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <h3>Upcoming schedule</h3>
+            <p>Your next events and deadlines</p>
+          </div>
+          <button
+            className="text-link"
+            onClick={() => nav("/" + role + "/calendar")}
+          >
+            View calendar
+          </button>
+        </div>
+        <div className="schedule-widget-list">
+          {events.map((event) => (
+            <div key={event.id} className="schedule-widget-item">
+              <div
+                className="schedule-color"
+                style={{ background: event.color }}
+              />
+              <div className="schedule-info">
+                <strong>{event.title}</strong>
+                <small>
+                  {new Date(event.date + "T00:00:00").toLocaleDateString(
+                    "en-IN",
+                    { weekday: "short", day: "numeric", month: "short" },
+                  )}{" "}
+                  · {event.time}
+                </small>
+              </div>
+              {typeIcon(event.type)}
+            </div>
+          ))}
+        </div>
+      </section>
+    </section>
   );
 }

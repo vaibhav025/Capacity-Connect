@@ -7,19 +7,24 @@ import {
   Bell,
   BookOpen,
   BrainCircuit,
+  Calendar,
   FileText,
   LayoutDashboard,
   Library,
   LogOut,
   Menu,
+  MessageSquare,
   ShieldCheck,
   Users,
   X,
+  Search,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { SearchCommand } from "../ui/SearchCommand";
 import { SkeletonLoaders } from "../ui/SkeletonLoaders";
+import { NotificationDrawer } from "./NotificationDrawer";
+import { useDemo } from "../../lib/demoStore";
 import {
   Link,
   Navigate,
@@ -38,6 +43,21 @@ const Announcements = lazy(() =>
 const Assessments = lazy(() =>
   import("../../pages/Assessments").then((module) => ({
     default: module.Assessments,
+  })),
+);
+const AuditTrail = lazy(() =>
+  import("../../pages/AuditTrail").then((module) => ({
+    default: module.AuditTrail,
+  })),
+);
+const CalendarPage = lazy(() =>
+  import("../../pages/CalendarPage").then((module) => ({
+    default: module.CalendarPage,
+  })),
+);
+const CertificateVerify = lazy(() =>
+  import("../../pages/CertificateVerify").then((module) => ({
+    default: module.CertificateVerify,
   })),
 );
 const Certificates = lazy(() =>
@@ -63,6 +83,11 @@ const Dashboard = lazy(() =>
     default: module.Dashboard,
   })),
 );
+const DiscussionCentre = lazy(() =>
+  import("../../pages/DiscussionCentre").then((module) => ({
+    default: module.DiscussionCentre,
+  })),
+);
 const LibraryPage = lazy(() =>
   import("../../pages/LibraryPage").then((module) => ({
     default: module.LibraryPage,
@@ -76,6 +101,11 @@ const Performance = lazy(() =>
 const Profile = lazy(() =>
   import("../../pages/Profile").then((module) => ({ default: module.Profile })),
 );
+const Projects = lazy(() =>
+  import("../../pages/Projects").then((module) => ({
+    default: module.Projects,
+  })),
+);
 const UsersPage = lazy(() =>
   import("../../pages/UsersPage").then((module) => ({
     default: module.UsersPage,
@@ -88,11 +118,14 @@ export function Shell({ role }: { role: Role }) {
   const [collapsed, setCollapsed] = useState(false);
   const [compact, setCompact] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const sidebar = useRef<HTMLElement>(null);
   const menu = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
+  const { notifications } = useDemo();
+  const unreadCount = notifications.filter((n) => !n.read).length;
   useMotionValueEvent(scrollY, "change", (value) => setCompact(value > 32));
   useEffect(() => {
     const media = matchMedia("(max-width: 760px)");
@@ -145,21 +178,29 @@ export function Shell({ role }: { role: Role }) {
           ["users", "User approvals", Users],
           ["competency-mapping", "Competency mapping", BrainCircuit],
           ["announcements", "Announcements", Bell],
+          ["audit-trail", "Audit trail", ShieldCheck],
+          ["calendar", "Calendar", Calendar],
         ]
       : role === "trainer"
         ? [
             ["dashboard", "Dashboard", LayoutDashboard],
             ["courses", "My courses", BookOpen],
+            ["projects", "Projects", FileText],
             ["library", "Content library", Library],
             ["assessments", "Assessments", FileText],
+            ["resources", "Resources", MessageSquare],
             ["performance", "Performance", Activity],
+            ["calendar", "Calendar", Calendar],
             ["profile", "My profile", Users],
           ]
         : [
             ["dashboard", "Dashboard", LayoutDashboard],
             ["courses", "Course catalogue", BookOpen],
+            ["projects", "Projects", FileText],
             ["assessments", "My assessments", FileText],
+            ["resources", "Resources", MessageSquare],
             ["certificates", "Certificates", Award],
+            ["calendar", "Calendar", Calendar],
             ["profile", "My profile", Users],
           ];
   return (
@@ -309,14 +350,14 @@ export function Shell({ role }: { role: Role }) {
                 <option value="trainee">Trainee</option>
               </select>
             </label>
-            <Link
-              aria-label="View announcements"
-              className="icon-btn"
-              to={`/${role}/announcements`}
+            <button
+              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+              className="icon-btn notif-trigger"
+              onClick={() => setNotifOpen(true)}
             >
               <Bell size={19} />
-              <i />
-            </Link>
+              {unreadCount > 0 && <i />}
+            </button>
             <Link
               className="top-avatar"
               aria-label="Open professional profile"
@@ -346,17 +387,24 @@ export function Shell({ role }: { role: Role }) {
                 {role === "admin" && (
                   <Route path="users" element={<UsersPage />} />
                 )}
+                {role === "admin" && (
+                  <Route path="audit-trail" element={<AuditTrail />} />
+                )}
                 <Route
                   path="announcements"
                   element={<Announcements role={role} />}
                 />
+                <Route path="projects" element={<Projects role={role} />} />
                 <Route path="library" element={<LibraryPage />} />
                 <Route
                   path="assessments"
                   element={<Assessments role={role} />}
                 />
+                <Route path="resources" element={<DiscussionCentre role={role} />} />
                 <Route path="performance" element={<Performance />} />
+                <Route path="calendar" element={<CalendarPage role={role} />} />
                 <Route path="certificates" element={<Certificates />} />
+                <Route path="certificate-verify" element={<CertificateVerify />} />
                 <Route
                   path="profile"
                   element={<Profile key={role} role={role} />}
@@ -367,6 +415,11 @@ export function Shell({ role }: { role: Role }) {
           </AnimatedPageTransition>
         </div>
       </main>
+      <NotificationDrawer
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        role={role}
+      />
     </div>
   );
 }
